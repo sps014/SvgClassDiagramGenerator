@@ -1,0 +1,36 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Forms
+@using SvgClassDiagramGenerator.Parser
+@using System.Text.Json
+
+<h1>Hello, world!</h1>
+
+<InputFile OnChange="LoadFiles"/>
+
+@if (parsedInfo!=null)
+{
+    <p>@(parsedInfo)</p>
+}
+
+@code
+{
+    string parsedInfo;
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+    private async void LoadFiles(InputFileChangeEventArgs e)
+    {
+        if (e.FileCount <= 0)
+            return;
+
+        var browser = e.File;
+        using var stream = browser.OpenReadStream();
+        using StreamReader reader = new(stream);
+        var text = await reader.ReadToEndAsync();
+        var parser = new CSharpSyntaxParser(text);
+        var info = parser.Parse();
+        parsedInfo = JsonSerializer.Serialize(info);
+        StateHasChanged();
+    }
+}
