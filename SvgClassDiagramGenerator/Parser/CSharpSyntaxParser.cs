@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SvgClassDiagramGenerator.Parser;
 
-public class CSharpSyntaxParser
+public class CSharpSyntaxParser: LanguageParser
 {
     private SyntaxTree SyntaxTree { get; init; }
     private SyntaxNode? _root;
@@ -19,12 +19,12 @@ public class CSharpSyntaxParser
         }
     }
 
-    public CSharpSyntaxParser(string text)
+    public CSharpSyntaxParser(string text):base(text)
     {
         SyntaxTree = CSharpSyntaxTree.ParseText(text);
     }
 
-    public ParsedSyntaxInfo Parse()
+    public override ParsedSyntaxInfo Parse()
     {
         return new ParsedSyntaxInfo()
         {

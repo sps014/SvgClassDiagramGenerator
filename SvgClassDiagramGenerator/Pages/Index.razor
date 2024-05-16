@@ -3,9 +3,15 @@
 @using SvgClassDiagramGenerator.Parser
 @using System.Text.Json
 @using SvgClassDiagramGenerator.Renderer
+@using SvgClassDiagramGenerator.SyntaxDrawer
+@using System.Text
 
 @inject SvgRenderer Renderer
 
+@if (classDiagram != null)
+{
+    <button @onclick="Download" style="margin:10px">Download Svg</button>
+}
 
 <div style="display:flex;flex-direction:column">
     <InputFile OnChange="LoadFiles" />
@@ -13,14 +19,11 @@
     </div>
 </div>
 
-@if (parsedInfo!=null)
-{
-    <p>@(parsedInfo)</p>
-}
+
 
 @code
 {
-    string parsedInfo;
+    ClassDiagramRenderer classDiagram;
     protected override void OnInitialized()
     {
         base.OnInitialized();
@@ -28,7 +31,6 @@
     protected override void OnAfterRender(bool firstRender)
     {
         base.OnAfterRender(firstRender);
-        Draw();
     }
     private async void LoadFiles(InputFileChangeEventArgs e)
     {
@@ -41,13 +43,19 @@
         var text = await reader.ReadToEndAsync();
         var parser = new CSharpSyntaxParser(text);
         var info = parser.Parse();
-        parsedInfo = JsonSerializer.Serialize(info);
+
+        Draw(info.Classes.First());
+
+    }
+    async void Draw(ClassSyntax classSyntax)
+    {
+        classDiagram = ClassDiagramRenderer.Init(Renderer);
+        await classDiagram.CreateSvgCanvas("#svgDiagram", 1200, 1000);
+        classDiagram.Draw(classSyntax);
         StateHasChanged();
     }
-    async void Draw()
+    void Download()
     {
-        await Renderer.CreateSvgCanvas("#svgDiagram", 300, 300);
-        var boundingBox = Renderer.Text("SomeText").Stroke(1,"green").Move(0,0).GetBoundingBox();
-        Renderer.Rect(boundingBox.Width, boundingBox.Height).Move(0,0).Fill("none").Stroke("red");
+        BlazorBindGen.BindGen.Window.CallVoid("saveAsFile", classDiagram.ClassName + ".svg", Convert.ToBase64String(Encoding.UTF8.GetBytes(Renderer.Svg())));
     }
 }

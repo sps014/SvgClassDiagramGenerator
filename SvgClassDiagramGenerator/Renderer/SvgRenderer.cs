@@ -38,4 +38,9 @@ public class SvgRenderer
     {
         return new(_drawingPtr.CallRef("line", x1, y1, x2, y2));
     }
+
+    internal string Svg()
+    {
+        return _drawingPtr.Call<string>("svg");
+    }
 }

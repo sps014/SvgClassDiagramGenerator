@@ -11,7 +11,7 @@ public abstract class SvgObjectBase<T> where T:class
     {
         SvgElementPtr = _svgElementPtr;
     }
-    public T Move(int x,int y)
+    public T Move(float x,float y)
     {
         SvgElementPtr.CallVoid("move", x, y);
         return This;
@@ -27,6 +27,11 @@ public abstract class SvgObjectBase<T> where T:class
             width,
             color
         });
+        return This;
+    }
+    public T Stroke(object obj)
+    {
+        SvgElementPtr.CallVoid("stroke",obj);
         return This;
     }
     public T Stroke(string color)
@@ -63,6 +68,16 @@ public abstract class SvgObjectBase<T> where T:class
     public T MaskWith<G>(SvgObjectBase<G> other) where G : class
     {
         SvgElementPtr.CallVoid("maskWith", other.SvgElementPtr);
+        return This;
+    }
+    public T Attr(string name,object value)
+    {
+        SvgElementPtr.CallVoid("attr", name,value);
+        return This;
+    }
+    public T Attr(object value)
+    {
+        SvgElementPtr.CallVoid("attr", value);
         return This;
     }
 }
