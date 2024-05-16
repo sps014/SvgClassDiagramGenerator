@@ -12,7 +12,8 @@ public class ClassDiagramRenderer
     public int PaddingY { get; set; } = 0;
     public int DivideLineSpacing { get; set; } = 10;
 
-    public string ClassName { get; private set; }
+    public string? ClassName { get; private set; }
+
 
     private ClassDiagramRenderer(SvgRenderer renderer) {
         Renderer = renderer;
@@ -33,26 +34,30 @@ public class ClassDiagramRenderer
         SizeF sizeMid  = SizeF.Empty;
 
         sizes.Add(sizeMid = DrawAttributes(@class.Properties,PaddingY+20));
+
         sizes.Add(DrawMethods(@class.Functions, (int)sizes[^1].Height+DivideLineSpacing));
 
-        var maxX = sizes.MaxBy(z => z.Width).Width+10;
+        var maxX = sizes.MaxBy(z => z.Width).Width+PaddingX;
 
+        //draw 
         DrawMidLine(maxX, sizeMid.Height);
 
-
-
         var classSize = DrawClassName(@class,maxX);
-        DrawMidLine(maxX, classSize.Height-2);
 
-        DrawRect(maxX, sizes[^1].Height+5);
+        //Draw line below class Name
+        DrawMidLine(maxX, classSize.Height);
+
+        //draw class box
+        DrawRect(maxX, sizes[^1].Height);
 
         ClassName = @class.Name;
     }
 
     private void DrawRect(float maxX,float totalY)
     {
-        Renderer.Rect(maxX, totalY).Move(PaddingX,0).Fill("none").Stroke(1,"black");
+        Renderer.Rect(maxX, totalY).Move(PaddingX ,0).Fill("none").Stroke(1,"black");
     }
+
     public string Svg()
     {
         return Renderer.Svg();
@@ -65,22 +70,28 @@ public class ClassDiagramRenderer
         {
             str += ": " + @class.BaseClasses;
         }
-        var text = Renderer.Text(str).Stroke(2).Attr("font-weight","bold");
-        var rect = text.GetBoundingBox();
-        int x = (int)(maxX / 2 - rect.Width / 2);
-        text.Move(x,0);
+        var text = Renderer.Text(str).Attr("font-weight","bold");
+
+
+        var rect = text.GetBoundingBox(); 
+
+        int x = (int)(maxX / 2 - rect.Width / 2);  //center of x
+
+        text.Move(x+PaddingX,0);
+
         return new SizeF((float)rect.Width, (float)rect.Height);
     }
     private void DrawMidLine(double maxX,double midY)
     {
         midY += DivideLineSpacing / 2;
-        Renderer.Line(PaddingX, midY, maxX+5, midY).Stroke(1,"black");
+        Renderer.Line(PaddingX, midY, maxX+PaddingX, midY).Stroke(1,"black");
     }
 
     private SizeF DrawAttributes(List<DataMember> dataMembers,int currentY)
     {
         float totalY = currentY;
         float maxX = 0;
+
         foreach (DataMember member in dataMembers)
         {
             SizeF dim=DrawAttribute(member,totalY);
@@ -94,6 +105,7 @@ public class ClassDiagramRenderer
     {
         float totalY = currentY;
         float maxX = 0;
+
         foreach (MemberFunction func in functions)
         {
             SizeF dim = DrawMethod(func, totalY);
@@ -106,25 +118,20 @@ public class ClassDiagramRenderer
 
     private SizeF DrawMethod(MemberFunction func, float currentY)
     {
-        string str = func.IsPublic ? "+" : "-";
-        str += func.Name;
-        str += "(";
+        string accessModifier = func.IsPublic ? "+" : "-";
+        string methodArguments = string.Join(",", func.Arguments.Select(arg => $"{arg.Name}:{arg.Type}"));
 
-        str+= string.Join(",",func.Arguments.Select(x=>x.Name+":"+x.Type));
-
-        str += ")";
-        str += ": ";
-        str += func.Type;
+        string str = $"{accessModifier}{func.Name}({methodArguments}): {func.Type}";
 
         var rect = Renderer.Text(str).Move(PaddingX, currentY).GetBoundingBox();
+
         return new SizeF((float)rect.Width, (float)rect.Height);
     }
 
     private SizeF DrawAttribute(DataMember member, float currentY)
     {
         string str = member.IsPublic ? "+" : "-";
-        str += member.Name+": ";
-        str += member.Type;
+        str += $"{member.Name}: {member.Type} ";
 
         var rect = Renderer.Text(str).Move(PaddingX, currentY).GetBoundingBox();
         return new SizeF((float)rect.Width, (float)rect.Height);
